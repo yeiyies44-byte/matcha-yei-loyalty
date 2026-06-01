@@ -190,6 +190,180 @@
       letter-spacing: 0.05em;
       line-height: 1.6;
     }
+    /* ── CLIENT CARD ──────────────────────────────────────────── */
+    #view-client-card {
+      align-items: center;
+      justify-content: flex-start;
+      padding: 32px 24px 48px;
+      min-height: 100vh;
+      gap: 0;
+    }
+    .card-wrapper {
+      width: 100%;
+      max-width: 380px;
+      display: flex;
+      flex-direction: column;
+      gap: 20px;
+    }
+    .card-header { text-align: center; }
+    .card-header .wordmark { font-size: 1.6rem; }
+    .card-client-name {
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 900;
+      color: var(--text-main);
+      text-align: center;
+      letter-spacing: 0.05em;
+      margin-top: 6px;
+    }
+
+    /* ── PCB STAMP CARD ─────────────────────────────────────── */
+    .stamp-card {
+      background: var(--ink-mid);
+      border: 1px solid var(--pcb-dark);
+      border-radius: 10px;
+      padding: 24px 20px 28px;
+      position: relative;
+      overflow: hidden;
+    }
+    .stamp-card::before {
+      content: '';
+      position: absolute;
+      top: 0; left: 0; right: 0;
+      height: 3px;
+      background: linear-gradient(90deg, var(--pcb-dark), var(--phosphor), var(--pcb-dark));
+    }
+    .stamp-count-label {
+      font-family: var(--font-data);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      text-align: center;
+      letter-spacing: 0.12em;
+      margin-bottom: 16px;
+    }
+    .stamp-count-label span {
+      font-size: 1.1rem;
+      color: var(--phosphor);
+      text-shadow: 0 0 10px var(--glow);
+    }
+
+    /* 3x3 grid of PCB via circles */
+    .stamp-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 14px;
+      max-width: 240px;
+      margin: 0 auto 20px;
+    }
+    .stamp-via {
+      aspect-ratio: 1;
+      border-radius: 50%;
+      border: 2px solid var(--pcb-dark);
+      background: var(--ink);
+      position: relative;
+      transition: all 0.2s;
+      box-shadow: 0 0 0 5px var(--ink-mid), 0 0 0 7px var(--pcb-trace);
+    }
+    .stamp-via::after {
+      content: '';
+      position: absolute;
+      inset: 5px;
+      border-radius: 50%;
+      background: var(--ink-mid);
+    }
+    .stamp-via.filled {
+      background: var(--phosphor);
+      border-color: var(--phosphor);
+      box-shadow:
+        0 0 0 5px var(--ink-mid),
+        0 0 0 7px var(--phosphor),
+        0 0 16px rgba(0,255,65,0.5);
+    }
+    .stamp-via.filled::after {
+      background: rgba(0,200,50,0.4);
+    }
+
+    /* Reward banner */
+    .reward-banner {
+      background: linear-gradient(135deg, var(--phosphor), #00A828);
+      border-radius: 6px;
+      padding: 12px 16px;
+      text-align: center;
+      display: none;
+    }
+    .reward-banner.visible { display: block; }
+    .reward-banner .reward-title {
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      font-weight: 900;
+      color: var(--ink);
+      letter-spacing: 0.15em;
+    }
+    .reward-banner .reward-item {
+      font-family: var(--font-display);
+      font-size: 0.9rem;
+      font-weight: 900;
+      color: var(--ink);
+      margin-top: 2px;
+    }
+
+    /* Progress bar */
+    .progress-track {
+      height: 4px;
+      background: var(--pcb-trace);
+      border-radius: 2px;
+      margin-top: 16px;
+      overflow: hidden;
+    }
+    .progress-fill {
+      height: 100%;
+      background: var(--phosphor);
+      border-radius: 2px;
+      box-shadow: 0 0 8px var(--glow);
+      transition: width 0.4s ease;
+    }
+    .progress-label {
+      font-family: var(--font-data);
+      font-size: 0.62rem;
+      color: var(--text-dim);
+      text-align: right;
+      margin-top: 4px;
+    }
+
+    /* Active promotion */
+    .promo-card {
+      background: transparent;
+      border: 1px solid var(--phosphor);
+      border-radius: 8px;
+      padding: 14px 16px;
+      display: none;
+      box-shadow: 0 0 12px rgba(0,200,50,0.15);
+    }
+    .promo-card.visible { display: block; }
+    .promo-card .promo-header {
+      font-family: var(--font-data);
+      font-size: 0.6rem;
+      color: var(--phosphor);
+      letter-spacing: 0.2em;
+      margin-bottom: 6px;
+    }
+    .promo-card .promo-text {
+      font-family: var(--font-body);
+      font-size: 0.95rem;
+      font-weight: 600;
+      color: var(--text-main);
+      line-height: 1.4;
+    }
+
+    /* Card footer */
+    .card-footer {
+      font-family: var(--font-data);
+      font-size: 0.58rem;
+      color: var(--text-dim);
+      text-align: center;
+      letter-spacing: 0.08em;
+      line-height: 1.8;
+    }
   </style>
 </head>
 <body>
@@ -441,7 +615,63 @@ function handleRegister() {
   showView('client-card');
   renderClientCard(customer);
 }
-function renderClientCard(customer) {}
+function escapeHTML(str) {
+  return String(str)
+    .replace(/&/g,'&amp;')
+    .replace(/</g,'&lt;')
+    .replace(/>/g,'&gt;')
+    .replace(/"/g,'&quot;');
+}
+
+function renderClientCard(customer) {
+  const v = document.getElementById('view-client-card');
+  const promo = DB.getPromotion();
+  const stampsNeeded = 9 - customer.stamps;
+  const rewardReady = customer.stamps >= 9;
+
+  const stampHTML = Array.from({ length: 9 }, (_, i) =>
+    `<div class="stamp-via ${i < customer.stamps ? 'filled' : ''}"></div>`
+  ).join('');
+
+  v.innerHTML = `
+    <div class="card-wrapper">
+      <div class="card-header">
+        <div class="wordmark">MATCHA YEI<span>!</span></div>
+        <div class="card-client-name">${escapeHTML(customer.name.toUpperCase())}</div>
+      </div>
+
+      <div class="stamp-card">
+        <div class="stamp-count-label">
+          SELLOS: <span>${customer.stamps}</span>/9 &nbsp;·&nbsp; VISITAS: ${customer.total_visits}
+        </div>
+
+        <div class="stamp-grid">${stampHTML}</div>
+
+        <div class="reward-banner ${rewardReady ? 'visible' : ''}">
+          <div class="reward-title">// RECOMPENSA DISPONIBLE</div>
+          <div class="reward-item">ROOT MATCHA GRATIS</div>
+        </div>
+
+        <div class="progress-track">
+          <div class="progress-fill" style="width:${(customer.stamps/9)*100}%"></div>
+        </div>
+        <div class="progress-label">
+          ${rewardReady ? '// PROTOCOLO_006 DESBLOQUEADO' : `// FALTAN ${stampsNeeded} SELLO${stampsNeeded !== 1 ? 'S' : ''}`}
+        </div>
+      </div>
+
+      <div class="promo-card ${promo ? 'visible' : ''}">
+        <div class="promo-header">// SEÑAL ACTIVA</div>
+        <div class="promo-text">${promo ? escapeHTML(promo.message) : ''}</div>
+      </div>
+
+      <div class="card-footer">
+        PROTOCOL ID: ${escapeHTML(customer.id.substring(0,8).toUpperCase())}<br>
+        RECOMPENSAS CANJEADAS: ${customer.rewards_redeemed}
+      </div>
+    </div>
+  `;
+}
 function renderOwnerLogin() {}
 function renderDashboard() {}
 
