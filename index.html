@@ -136,6 +136,60 @@
       background: linear-gradient(90deg, transparent, var(--pcb-dark), transparent);
       margin: 16px 0;
     }
+    /* ── CLIENT REGISTRATION ─────────────────────────────────── */
+    #view-client-register {
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      min-height: 100vh;
+    }
+    .register-container {
+      width: 100%;
+      max-width: 360px;
+      display: flex;
+      flex-direction: column;
+      gap: 24px;
+    }
+    .register-header { text-align: center; }
+    .register-header .wordmark { font-size: 1.8rem; }
+    .register-header .tagline {
+      font-family: var(--font-data);
+      font-size: 0.7rem;
+      color: var(--text-dim);
+      letter-spacing: 0.15em;
+      margin-top: 4px;
+    }
+    .register-card {
+      background: var(--ink-mid);
+      border: 1px solid var(--pcb-dark);
+      border-radius: 8px;
+      padding: 28px 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 16px;
+    }
+    .register-card .field { display: flex; flex-direction: column; gap: 6px; }
+    .register-card .field-hint {
+      font-family: var(--font-data);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+    }
+    .error-msg {
+      font-family: var(--font-data);
+      font-size: 0.72rem;
+      color: #FF6B6B;
+      text-align: center;
+      min-height: 1em;
+    }
+    .register-footer {
+      font-family: var(--font-data);
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      text-align: center;
+      letter-spacing: 0.05em;
+      line-height: 1.6;
+    }
   </style>
 </head>
 <body>
@@ -323,7 +377,70 @@ function router() {
 }
 
 // ── RENDER STUBS (replaced in later tasks) ───────────────
-function renderClientRegister() {}
+function renderClientRegister() {
+  const v = document.getElementById('view-client-register');
+  v.innerHTML = `
+    <div class="register-container">
+      <div class="register-header">
+        <div class="wordmark">MATCHA YEI<span>!</span></div>
+        <div class="tagline">SISTEMA DE LOYALTY // PROTOCOLO ACTIVO</div>
+      </div>
+
+      <div class="register-card">
+        <div class="t-label" style="text-align:center;margin-bottom:4px;">INICIALIZAR CLIENTE</div>
+        <div class="pcb-line"></div>
+
+        <div class="field">
+          <label class="t-label" for="reg-name">NOMBRE COMPLETO</label>
+          <input class="input" id="reg-name" type="text" placeholder="TU NOMBRE" autocomplete="name" maxlength="60">
+          <span class="field-hint">// IDENTIFICADOR DE PROTOCOLO</span>
+        </div>
+
+        <div class="field">
+          <label class="t-label" for="reg-wa">WHATSAPP</label>
+          <input class="input" id="reg-wa" type="tel" placeholder="+52 XXX XXX XXXX" autocomplete="tel" maxlength="20">
+          <span class="field-hint">// CANAL DE COMUNICACIÓN</span>
+        </div>
+
+        <div class="error-msg" id="reg-error"></div>
+
+        <button class="btn btn-primary" id="btn-register">INICIALIZAR PROTOCOLO</button>
+      </div>
+
+      <div class="register-footer">
+        AL REGISTRARTE RECIBES 1 SELLO DE BIENVENIDA<br>
+        9 SELLOS = ROOT MATCHA GRATIS ($75 VALUE)
+      </div>
+    </div>
+  `;
+
+  document.getElementById('btn-register').addEventListener('click', handleRegister);
+  document.getElementById('reg-name').addEventListener('keydown', e => {
+    if (e.key === 'Enter') document.getElementById('reg-wa').focus();
+  });
+  document.getElementById('reg-wa').addEventListener('keydown', e => {
+    if (e.key === 'Enter') handleRegister();
+  });
+}
+
+function handleRegister() {
+  const name = document.getElementById('reg-name').value.trim();
+  const wa   = document.getElementById('reg-wa').value.trim();
+  const err  = document.getElementById('reg-error');
+
+  if (!name) { err.textContent = '// ERROR: NOMBRE REQUERIDO'; return; }
+  if (!wa)   { err.textContent = '// ERROR: WHATSAPP REQUERIDO'; return; }
+  if (wa.replace(/\D/g,'').length < 8) {
+    err.textContent = '// ERROR: NÚMERO INVÁLIDO';
+    return;
+  }
+
+  err.textContent = '';
+  const customer = DB.addCustomer(name, wa);
+  localStorage.setItem(DB.K.CLIENT_ID, customer.id);
+  showView('client-card');
+  renderClientCard(customer);
+}
 function renderClientCard(customer) {}
 function renderOwnerLogin() {}
 function renderDashboard() {}
