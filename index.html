@@ -434,6 +434,148 @@
       min-height: 1em;
       text-align: center;
     }
+    /* ── OWNER DASHBOARD ─────────────────────────────────────── */
+    #view-owner-dashboard {
+      flex-direction: column;
+      min-height: 100vh;
+    }
+    .dash-header {
+      background: var(--ink-mid);
+      border-bottom: 1px solid var(--pcb-dark);
+      padding: 16px 20px;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    .dash-header .wordmark { font-size: 1rem; }
+    .dash-logout {
+      font-family: var(--font-data);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+      background: none;
+      border: 1px solid var(--dim);
+      padding: 6px 12px;
+      border-radius: 4px;
+      cursor: pointer;
+      letter-spacing: 0.08em;
+    }
+    .dash-logout:active { background: var(--ink-light); }
+
+    .dash-tabs {
+      display: flex;
+      border-bottom: 1px solid var(--pcb-dark);
+      background: var(--ink-mid);
+    }
+    .dash-tab {
+      flex: 1;
+      padding: 12px 8px;
+      font-family: var(--font-data);
+      font-size: 0.62rem;
+      letter-spacing: 0.1em;
+      text-align: center;
+      color: var(--text-dim);
+      background: none;
+      border: none;
+      cursor: pointer;
+      border-bottom: 2px solid transparent;
+      transition: all 0.15s;
+    }
+    .dash-tab.active {
+      color: var(--phosphor);
+      border-bottom-color: var(--phosphor);
+    }
+    .tab-panel { display: none; flex: 1; flex-direction: column; padding: 16px 20px; overflow-y: auto; }
+    .tab-panel.active { display: flex; }
+
+    /* Search */
+    .search-bar { position: relative; margin-bottom: 16px; }
+    .search-bar .input { padding-left: 36px; }
+    .search-bar::before {
+      content: '//';
+      position: absolute;
+      left: 12px;
+      top: 50%;
+      transform: translateY(-50%);
+      font-family: var(--font-data);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+    }
+
+    /* Customer rows */
+    .customer-list { display: flex; flex-direction: column; gap: 10px; }
+    .customer-row {
+      background: var(--ink-mid);
+      border: 1px solid var(--pcb-dark);
+      border-radius: 6px;
+      padding: 12px 16px;
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+    .customer-row-top {
+      display: flex;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .customer-name {
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 1rem;
+      color: var(--text-main);
+    }
+    .customer-wa {
+      font-family: var(--font-data);
+      font-size: 0.65rem;
+      color: var(--text-dim);
+    }
+    .customer-stamps-badge {
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      font-weight: 900;
+      color: var(--phosphor);
+      background: rgba(0,200,50,0.1);
+      border: 1px solid var(--pcb-dark);
+      padding: 4px 10px;
+      border-radius: 20px;
+      white-space: nowrap;
+    }
+    .customer-stamps-badge.full {
+      color: var(--ink);
+      background: var(--phosphor);
+      box-shadow: 0 0 10px rgba(0,255,65,0.4);
+    }
+    .customer-row-meta {
+      font-family: var(--font-data);
+      font-size: 0.6rem;
+      color: var(--text-dim);
+      letter-spacing: 0.05em;
+    }
+    .customer-row-actions { display: flex; gap: 8px; margin-top: 4px; }
+    .customer-row-actions .btn { font-size: 0.65rem; padding: 10px 12px; }
+
+    /* Mini stamps */
+    .mini-stamps { display: flex; gap: 4px; flex-wrap: wrap; }
+    .mini-via {
+      width: 12px;
+      height: 12px;
+      border-radius: 50%;
+      border: 1px solid var(--pcb-dark);
+      background: var(--ink);
+    }
+    .mini-via.filled {
+      background: var(--phosphor);
+      border-color: var(--phosphor);
+      box-shadow: 0 0 4px var(--glow);
+    }
+
+    .no-results {
+      font-family: var(--font-data);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-align: center;
+      padding: 40px 0;
+      letter-spacing: 0.08em;
+    }
   </style>
 </head>
 <body>
@@ -809,7 +951,130 @@ function renderOwnerLogin() {
     });
   });
 }
-function renderDashboard() {}
+function renderDashboard() {
+  const v = document.getElementById('view-owner-dashboard');
+
+  v.innerHTML = `
+    <div class="dash-header">
+      <div class="wordmark">MATCHA YEI<span>!</span></div>
+      <button class="dash-logout" id="btn-logout">SALIR //</button>
+    </div>
+
+    <div class="dash-tabs">
+      <button class="dash-tab active" data-tab="clientes">CLIENTES</button>
+      <button class="dash-tab" data-tab="senal">SEÑAL</button>
+      <button class="dash-tab" data-tab="stats">STATS</button>
+    </div>
+
+    <div class="tab-panel active" id="tab-clientes">
+      <div class="search-bar">
+        <input class="input" id="search-input" type="text" placeholder="BUSCAR POR NOMBRE O WA...">
+      </div>
+      <div class="customer-list" id="customer-list"></div>
+    </div>
+
+    <div class="tab-panel" id="tab-senal"></div>
+    <div class="tab-panel" id="tab-stats"></div>
+  `;
+
+  v.querySelectorAll('.dash-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      v.querySelectorAll('.dash-tab').forEach(t => t.classList.remove('active'));
+      v.querySelectorAll('.tab-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      const panel = document.getElementById('tab-' + tab.dataset.tab);
+      panel.classList.add('active');
+      if (tab.dataset.tab === 'senal') renderPromoPanel();
+      if (tab.dataset.tab === 'stats') renderStatsPanel();
+    });
+  });
+
+  document.getElementById('btn-logout').addEventListener('click', () => {
+    sessionStorage.removeItem(DB.K.AUTH);
+    window.location.reload();
+  });
+
+  document.getElementById('search-input').addEventListener('input', e => {
+    renderCustomerList(e.target.value);
+  });
+
+  renderCustomerList('');
+}
+
+function renderCustomerList(query) {
+  const list = document.getElementById('customer-list');
+  if (!list) return;
+
+  let customers = DB.getCustomers();
+  const q = query.trim().toLowerCase();
+  if (q) {
+    customers = customers.filter(c =>
+      c.name.toLowerCase().includes(q) || c.whatsapp.includes(q)
+    );
+  }
+
+  customers.sort((a, b) => {
+    if (a.stamps >= 9 && b.stamps < 9) return -1;
+    if (b.stamps >= 9 && a.stamps < 9) return 1;
+    return new Date(b.last_visit) - new Date(a.last_visit);
+  });
+
+  if (customers.length === 0) {
+    list.innerHTML = `<div class="no-results">// SIN RESULTADOS</div>`;
+    return;
+  }
+
+  list.innerHTML = customers.map(c => {
+    const lastVisit = new Date(c.last_visit).toLocaleDateString('es-MX', { day:'2-digit', month:'short' });
+    const miniStamps = Array.from({length:9},(_,i)=>
+      `<div class="mini-via ${i<c.stamps?'filled':''}"></div>`).join('');
+    const rewardReady = c.stamps >= 9;
+
+    return `
+      <div class="customer-row">
+        <div class="customer-row-top">
+          <div>
+            <div class="customer-name">${escapeHTML(c.name)}</div>
+            <div class="customer-wa">${escapeHTML(c.whatsapp)}</div>
+          </div>
+          <div class="customer-stamps-badge ${rewardReady?'full':''}">${c.stamps}/9</div>
+        </div>
+        <div class="mini-stamps">${miniStamps}</div>
+        <div class="customer-row-meta">
+          VISITAS: ${c.total_visits} &nbsp;·&nbsp; CANJES: ${c.rewards_redeemed} &nbsp;·&nbsp; ÚLTIMA: ${lastVisit}
+        </div>
+        <div class="customer-row-actions">
+          <button class="btn btn-secondary" onclick="handleGiveStamp('${c.id}')">+ SELLO</button>
+          ${rewardReady ? `<button class="btn btn-primary" onclick="handleRedeemReward('${c.id}')">CANJEAR</button>` : ''}
+        </div>
+      </div>
+    `;
+  }).join('');
+}
+
+function handleGiveStamp(id) {
+  const customer = DB.addStamp(id);
+  if (customer) {
+    const q = document.getElementById('search-input')?.value || '';
+    renderCustomerList(q);
+    toast(`+1 SELLO → ${customer.name.toUpperCase()} (${customer.stamps}/9)`);
+  }
+}
+
+function handleRedeemReward(id) {
+  const c = DB.getCustomer(id);
+  if (!c || c.stamps < 9) return;
+  if (!confirm(`¿CANJEAR ROOT MATCHA GRATIS\npara ${c.name}?`)) return;
+  const updated = DB.redeemReward(id);
+  if (updated) {
+    renderCustomerList(document.getElementById('search-input')?.value || '');
+    toast(`PROTOCOLO_006 CANJEADO → ${updated.name.toUpperCase()}`);
+  }
+}
+
+// stubs for next task
+function renderPromoPanel() {}
+function renderStatsPanel() {}
 
 // ── INIT ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
