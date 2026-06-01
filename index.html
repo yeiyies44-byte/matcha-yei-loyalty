@@ -281,6 +281,58 @@ function runDBTests() {
   DB.saveCustomers(DB.getCustomers().filter(c => c.id !== testId));
   console.log('%c✓ DB tests passed', 'color: #00C832; font-weight: bold');
 }
+
+// ── VIEW SYSTEM ───────────────────────────────────────────
+function showView(id) {
+  document.querySelectorAll('.view').forEach(v => v.classList.remove('active'));
+  const el = document.getElementById('view-' + id);
+  if (el) el.classList.add('active');
+}
+
+function toast(msg, duration = 2500) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.classList.add('show');
+  setTimeout(() => t.classList.remove('show'), duration);
+}
+
+// ── ROUTER ────────────────────────────────────────────────
+function router() {
+  const isDashboard = new URLSearchParams(window.location.search).has('dashboard');
+
+  if (isDashboard) {
+    const auth = sessionStorage.getItem(DB.K.AUTH);
+    if (auth === 'true') {
+      showView('owner-dashboard');
+      renderDashboard();
+    } else {
+      showView('owner-login');
+      renderOwnerLogin();
+    }
+  } else {
+    const clientId = localStorage.getItem(DB.K.CLIENT_ID);
+    const customer = clientId ? DB.getCustomer(clientId) : null;
+    if (customer) {
+      showView('client-card');
+      renderClientCard(customer);
+    } else {
+      showView('client-register');
+      renderClientRegister();
+    }
+  }
+}
+
+// ── RENDER STUBS (replaced in later tasks) ───────────────
+function renderClientRegister() {}
+function renderClientCard(customer) {}
+function renderOwnerLogin() {}
+function renderDashboard() {}
+
+// ── INIT ──────────────────────────────────────────────────
+document.addEventListener('DOMContentLoaded', () => {
+  runDBTests();
+  router();
+});
 </script>
 </body>
 </html>
