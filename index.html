@@ -649,6 +649,79 @@
     .settings-section { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--pcb-trace); }
     .settings-row { display: flex; gap: 10px; align-items: flex-end; }
     .settings-row .field { flex: 1; display: flex; flex-direction: column; gap: 6px; }
+
+    /* ── MANAGEMENT PANEL ────────────────────────────────────── */
+    .mgmt-toggle {
+      font-family: var(--font-data);
+      font-size: 0.6rem;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      background: transparent;
+      border: 1px solid var(--dim);
+      border-radius: 4px;
+      padding: 10px 14px;
+      cursor: pointer;
+      width: auto;
+      flex-shrink: 0;
+    }
+    .mgmt-toggle.open { color: var(--phosphor); border-color: var(--pcb-dark); }
+    .mgmt-panel {
+      display: none;
+      flex-direction: column;
+      gap: 14px;
+      padding-top: 14px;
+      border-top: 1px solid var(--pcb-trace);
+      margin-top: 4px;
+    }
+    .mgmt-panel.open { display: flex; }
+    .mgmt-section { display: flex; flex-direction: column; gap: 8px; }
+    .mgmt-detail-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 6px;
+    }
+    .mgmt-detail-item {
+      background: var(--ink-light);
+      border: 1px solid var(--pcb-trace);
+      border-radius: 4px;
+      padding: 8px 10px;
+    }
+    .mgmt-detail-val {
+      font-family: var(--font-data);
+      font-size: 0.75rem;
+      color: var(--text-main);
+    }
+    .mgmt-detail-lbl {
+      font-family: var(--font-data);
+      font-size: 0.52rem;
+      color: var(--text-dim);
+      letter-spacing: 0.08em;
+      margin-top: 2px;
+    }
+    .mgmt-field { display: flex; flex-direction: column; gap: 6px; }
+    .stamp-adjuster { display: flex; align-items: center; gap: 8px; }
+    .adj-btn {
+      width: 38px;
+      height: 38px;
+      background: var(--ink-mid);
+      border: 1px solid var(--pcb-dark);
+      border-radius: 4px;
+      color: var(--phosphor);
+      font-family: var(--font-display);
+      font-size: 1.2rem;
+      font-weight: 900;
+      cursor: pointer;
+      flex-shrink: 0;
+    }
+    .adj-btn:active { background: var(--pcb-dark); }
+    .adj-count {
+      font-family: var(--font-display);
+      font-size: 1.3rem;
+      font-weight: 900;
+      color: var(--phosphor);
+      text-align: center;
+      min-width: 32px;
+    }
   </style>
 </head>
 <body>
@@ -757,6 +830,29 @@ const DB = {
       acc.totalRewards += c.rewards_redeemed;
       return acc;
     }, { totalClients: 0, stampsToday: 0, totalRewards: 0 });
+  },
+
+  updateCustomer(id, { name, whatsapp }) {
+    const list = this.getCustomers();
+    const idx = list.findIndex(c => c.id === id);
+    if (idx === -1) return null;
+    if (name) list[idx].name = name.trim();
+    if (whatsapp) list[idx].whatsapp = whatsapp.trim();
+    this.saveCustomers(list);
+    return list[idx];
+  },
+
+  deleteCustomer(id) {
+    this.saveCustomers(this.getCustomers().filter(c => c.id !== id));
+  },
+
+  setStamps(id, count) {
+    const list = this.getCustomers();
+    const idx = list.findIndex(c => c.id === id);
+    if (idx === -1) return null;
+    list[idx].stamps = Math.max(0, Math.min(9, count));
+    this.saveCustomers(list);
+    return list[idx];
   },
 };
 
@@ -1099,6 +1195,7 @@ function renderCustomerList(query) {
 
   list.innerHTML = customers.map(c => {
     const lastVisit = new Date(c.last_visit).toLocaleDateString('es-MX', { day:'2-digit', month:'short' });
+    const regDate = new Date(c.registered_date).toLocaleDateString('es-MX', { day:'2-digit', month:'short', year:'numeric' });
     const miniStamps = Array.from({length:9},(_,i)=>
       `<div class="mini-via ${i<c.stamps?'filled':''}"></div>`).join('');
     const rewardReady = c.stamps >= 9;
@@ -1119,6 +1216,58 @@ function renderCustomerList(query) {
         <div class="customer-row-actions">
           <button class="btn btn-secondary" onclick="handleGiveStamp('${c.id}')">+ SELLO</button>
           ${rewardReady ? `<button class="btn btn-primary" onclick="handleRedeemReward('${c.id}')">CANJEAR</button>` : ''}
+          <button class="btn mgmt-toggle" id="mgmt-btn-${c.id}" onclick="toggleMgmt('${c.id}')">···</button>
+        </div>
+
+        <div class="mgmt-panel" id="mgmt-${c.id}">
+          <div class="mgmt-section">
+            <div class="t-label">// DETALLE</div>
+            <div class="mgmt-detail-grid">
+              <div class="mgmt-detail-item">
+                <div class="mgmt-detail-val">${regDate}</div>
+                <div class="mgmt-detail-lbl">REGISTRO</div>
+              </div>
+              <div class="mgmt-detail-item">
+                <div class="mgmt-detail-val">${c.total_visits}</div>
+                <div class="mgmt-detail-lbl">VISITAS TOTALES</div>
+              </div>
+              <div class="mgmt-detail-item">
+                <div class="mgmt-detail-val">${c.rewards_redeemed}</div>
+                <div class="mgmt-detail-lbl">CANJES TOTALES</div>
+              </div>
+              <div class="mgmt-detail-item">
+                <div class="mgmt-detail-val">${escapeHTML(c.id.substring(0,8).toUpperCase())}</div>
+                <div class="mgmt-detail-lbl">PROTOCOL ID</div>
+              </div>
+            </div>
+          </div>
+
+          <div class="mgmt-section">
+            <div class="t-label">// EDITAR DATOS</div>
+            <div class="mgmt-field">
+              <label class="t-label" for="edit-name-${c.id}">NOMBRE</label>
+              <input class="input" id="edit-name-${c.id}" type="text" value="${escapeHTML(c.name)}" maxlength="60">
+            </div>
+            <div class="mgmt-field">
+              <label class="t-label" for="edit-wa-${c.id}">WHATSAPP</label>
+              <input class="input" id="edit-wa-${c.id}" type="tel" value="${escapeHTML(c.whatsapp)}" maxlength="20">
+            </div>
+            <button class="btn btn-secondary" onclick="handleEditCustomer('${c.id}')">GUARDAR CAMBIOS</button>
+          </div>
+
+          <div class="mgmt-section">
+            <div class="t-label">// AJUSTAR SELLOS</div>
+            <div class="stamp-adjuster">
+              <button class="adj-btn" onclick="adjStamp('${c.id}', -1)">−</button>
+              <div class="adj-count" id="adj-count-${c.id}">${c.stamps}</div>
+              <button class="adj-btn" onclick="adjStamp('${c.id}', 1)">+</button>
+              <button class="btn btn-secondary" style="width:auto;padding:10px 16px;margin-left:8px" onclick="handleSetStamps('${c.id}')">APLICAR</button>
+            </div>
+          </div>
+
+          <div class="mgmt-section">
+            <button class="btn btn-danger" onclick="handleDeleteCustomer('${c.id}')">ELIMINAR REGISTRO</button>
+          </div>
         </div>
       </div>
     `;
@@ -1145,7 +1294,51 @@ function handleRedeemReward(id) {
   }
 }
 
-// stubs for next task
+function toggleMgmt(id) {
+  const panel = document.getElementById('mgmt-' + id);
+  const btn = document.getElementById('mgmt-btn-' + id);
+  const isOpen = panel.classList.contains('open');
+  panel.classList.toggle('open', !isOpen);
+  btn.classList.toggle('open', !isOpen);
+  btn.textContent = isOpen ? '···' : 'CERRAR';
+}
+
+function adjStamp(id, delta) {
+  const el = document.getElementById('adj-count-' + id);
+  el.textContent = Math.max(0, Math.min(9, parseInt(el.textContent) + delta));
+}
+
+function handleSetStamps(id) {
+  const count = parseInt(document.getElementById('adj-count-' + id).textContent);
+  const customer = DB.setStamps(id, count);
+  if (customer) {
+    const q = document.getElementById('search-input')?.value || '';
+    renderCustomerList(q);
+    toast(`SELLOS AJUSTADOS → ${customer.name.toUpperCase()} (${customer.stamps}/9)`);
+  }
+}
+
+function handleEditCustomer(id) {
+  const name = document.getElementById('edit-name-' + id).value.trim();
+  const wa = document.getElementById('edit-wa-' + id).value.trim();
+  if (!name || !wa) { toast('// ERROR: CAMPOS REQUERIDOS'); return; }
+  const customer = DB.updateCustomer(id, { name, whatsapp: wa });
+  if (customer) {
+    const q = document.getElementById('search-input')?.value || '';
+    renderCustomerList(q);
+    toast(`CLIENTE ACTUALIZADO → ${customer.name.toUpperCase()}`);
+  }
+}
+
+function handleDeleteCustomer(id) {
+  const c = DB.getCustomer(id);
+  if (!c) return;
+  if (!confirm(`¿ELIMINAR REGISTRO DE ${c.name}?\nEsta acción no se puede deshacer.`)) return;
+  DB.deleteCustomer(id);
+  renderCustomerList(document.getElementById('search-input')?.value || '');
+  toast('REGISTRO ELIMINADO');
+}
+
 function renderPromoPanel() {
   const panel = document.getElementById('tab-senal');
   const promo = DB.getPromotion();
