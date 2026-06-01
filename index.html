@@ -665,6 +665,21 @@
       flex-shrink: 0;
     }
     .mgmt-toggle.open { color: var(--phosphor); border-color: var(--pcb-dark); }
+
+    /* ── DASHBOARD NEW CLIENT FORM ───────────────────────── */
+    .new-client-form {
+      display: none;
+      flex-direction: column;
+      gap: 12px;
+      background: var(--ink-mid);
+      border: 1px solid var(--phosphor);
+      border-radius: 8px;
+      padding: 16px;
+      margin-bottom: 16px;
+      box-shadow: 0 0 12px rgba(0,200,50,0.1);
+    }
+    .new-client-form.open { display: flex; }
+    .new-client-form .error-msg { color: #FF6B6B; font-family: var(--font-data); font-size: 0.7rem; min-height: 1em; }
     .mgmt-panel {
       display: none;
       flex-direction: column;
@@ -1136,6 +1151,22 @@ function renderDashboard() {
     </div>
 
     <div class="tab-panel active" id="tab-clientes">
+      <button class="btn btn-primary" id="btn-new-client" onclick="toggleNewClientForm()" style="margin-bottom:16px">+ NUEVO CLIENTE</button>
+
+      <div class="new-client-form" id="new-client-form">
+        <div class="t-label">// REGISTRAR CLIENTE</div>
+        <div class="mgmt-field">
+          <label class="t-label" for="dash-reg-name">NOMBRE COMPLETO</label>
+          <input class="input" id="dash-reg-name" type="text" placeholder="NOMBRE DEL CLIENTE" maxlength="60" autocomplete="off">
+        </div>
+        <div class="mgmt-field">
+          <label class="t-label" for="dash-reg-wa">WHATSAPP</label>
+          <input class="input" id="dash-reg-wa" type="tel" placeholder="+52 XXX XXX XXXX" maxlength="20" autocomplete="off">
+        </div>
+        <div class="error-msg" id="dash-reg-error"></div>
+        <button class="btn btn-primary" onclick="handleDashboardRegister()">REGISTRAR</button>
+      </div>
+
       <div class="search-bar">
         <input class="input" id="search-input" type="text" placeholder="BUSCAR POR NOMBRE O WA...">
       </div>
@@ -1337,6 +1368,36 @@ function handleDeleteCustomer(id) {
   DB.deleteCustomer(id);
   renderCustomerList(document.getElementById('search-input')?.value || '');
   toast('REGISTRO ELIMINADO');
+}
+
+function toggleNewClientForm() {
+  const form = document.getElementById('new-client-form');
+  const btn = document.getElementById('btn-new-client');
+  const isOpen = form.classList.contains('open');
+  form.classList.toggle('open', !isOpen);
+  btn.textContent = isOpen ? '+ NUEVO CLIENTE' : '× CANCELAR';
+  if (!isOpen) document.getElementById('dash-reg-name').focus();
+}
+
+function handleDashboardRegister() {
+  const name = document.getElementById('dash-reg-name').value.trim();
+  const wa = document.getElementById('dash-reg-wa').value.trim();
+  const err = document.getElementById('dash-reg-error');
+
+  if (!name) { err.textContent = '// ERROR: NOMBRE REQUERIDO'; return; }
+  if (!wa) { err.textContent = '// ERROR: WHATSAPP REQUERIDO'; return; }
+  if (wa.replace(/\D/g, '').length < 8) { err.textContent = '// ERROR: NÚMERO INVÁLIDO'; return; }
+
+  err.textContent = '';
+  const customer = DB.addCustomer(name, wa);
+
+  document.getElementById('new-client-form').classList.remove('open');
+  document.getElementById('btn-new-client').textContent = '+ NUEVO CLIENTE';
+  document.getElementById('dash-reg-name').value = '';
+  document.getElementById('dash-reg-wa').value = '';
+
+  renderCustomerList(document.getElementById('search-input')?.value || '');
+  toast(`CLIENTE REGISTRADO → ${customer.name.toUpperCase()}`);
 }
 
 function renderPromoPanel() {
