@@ -364,6 +364,76 @@
       letter-spacing: 0.08em;
       line-height: 1.8;
     }
+    /* ── OWNER LOGIN ──────────────────────────────────────────── */
+    #view-owner-login {
+      align-items: center;
+      justify-content: center;
+      padding: 32px 24px;
+      min-height: 100vh;
+    }
+    .login-container {
+      width: 100%;
+      max-width: 300px;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      gap: 28px;
+    }
+    .login-title {
+      font-family: var(--font-display);
+      font-size: 0.7rem;
+      font-weight: 900;
+      color: var(--text-dim);
+      letter-spacing: 0.2em;
+      text-align: center;
+    }
+    .pin-display {
+      display: flex;
+      gap: 12px;
+      justify-content: center;
+    }
+    .pin-dot {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--pcb-dark);
+      background: transparent;
+      transition: all 0.15s;
+    }
+    .pin-dot.filled {
+      background: var(--phosphor);
+      border-color: var(--phosphor);
+      box-shadow: 0 0 8px var(--glow);
+    }
+    .pin-keypad {
+      display: grid;
+      grid-template-columns: repeat(3, 72px);
+      gap: 10px;
+    }
+    .pin-key {
+      height: 56px;
+      background: var(--ink-mid);
+      border: 1px solid var(--pcb-dark);
+      border-radius: 6px;
+      color: var(--text-main);
+      font-family: var(--font-display);
+      font-size: 1rem;
+      font-weight: 900;
+      cursor: pointer;
+      transition: all 0.1s;
+    }
+    .pin-key:active { background: var(--pcb-dark); transform: scale(0.95); }
+    .pin-key.clear { color: var(--text-dim); font-family: var(--font-data); font-size: 0.7rem; letter-spacing: 0.05em; }
+    .pin-key.enter { background: var(--phosphor); color: var(--ink); border-color: var(--phosphor); }
+    .pin-key.enter:active { background: var(--pcb-dark); }
+    .login-error {
+      font-family: var(--font-data);
+      font-size: 0.7rem;
+      color: #FF6B6B;
+      letter-spacing: 0.05em;
+      min-height: 1em;
+      text-align: center;
+    }
   </style>
 </head>
 <body>
@@ -672,7 +742,73 @@ function renderClientCard(customer) {
     </div>
   `;
 }
-function renderOwnerLogin() {}
+function renderOwnerLogin() {
+  const v = document.getElementById('view-owner-login');
+  let pin = '';
+
+  v.innerHTML = `
+    <div class="login-container">
+      <div class="wordmark" style="font-size:1.6rem">MATCHA YEI<span>!</span></div>
+      <div class="login-title">// ACCESO DASHBOARD</div>
+
+      <div class="pin-display">
+        ${[0,1,2,3].map(i => `<div class="pin-dot" id="dot-${i}"></div>`).join('')}
+      </div>
+
+      <div class="pin-keypad">
+        ${[1,2,3,4,5,6,7,8,9].map(n =>
+          `<button class="pin-key" data-key="${n}">${n}</button>`
+        ).join('')}
+        <button class="pin-key clear" data-key="clear">CLR</button>
+        <button class="pin-key" data-key="0">0</button>
+        <button class="pin-key enter" data-key="enter">OK</button>
+      </div>
+
+      <div class="login-error" id="login-error"></div>
+    </div>
+  `;
+
+  function updateDots() {
+    [0,1,2,3].forEach(i => {
+      document.getElementById('dot-' + i)
+        .classList.toggle('filled', i < pin.length);
+    });
+  }
+
+  function attemptAuth() {
+    const settings = DB.getSettings();
+    if (pin === settings.pin) {
+      sessionStorage.setItem(DB.K.AUTH, 'true');
+      showView('owner-dashboard');
+      renderDashboard();
+    } else {
+      document.getElementById('login-error').textContent = '// PIN INCORRECTO';
+      pin = '';
+      updateDots();
+    }
+  }
+
+  v.querySelectorAll('.pin-key').forEach(btn => {
+    btn.addEventListener('click', () => {
+      const key = btn.dataset.key;
+      if (key === 'clear') {
+        pin = '';
+        document.getElementById('login-error').textContent = '';
+      } else if (key === 'enter') {
+        attemptAuth();
+        return;
+      } else if (pin.length < 4) {
+        pin += key;
+        if (pin.length === 4) {
+          updateDots();
+          attemptAuth();
+          return;
+        }
+      }
+      updateDots();
+    });
+  });
+}
 function renderDashboard() {}
 
 // ── INIT ──────────────────────────────────────────────────
