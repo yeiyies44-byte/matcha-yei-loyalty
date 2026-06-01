@@ -576,6 +576,79 @@
       padding: 40px 0;
       letter-spacing: 0.08em;
     }
+
+    /* ── PROMO PANEL ─────────────────────────────────────────── */
+    .promo-panel { display: flex; flex-direction: column; gap: 16px; }
+    .promo-panel-label {
+      font-family: var(--font-data);
+      font-size: 0.62rem;
+      color: var(--text-dim);
+      letter-spacing: 0.12em;
+    }
+    .promo-active-preview {
+      background: var(--ink-mid);
+      border: 1px solid var(--phosphor);
+      border-radius: 8px;
+      padding: 14px 16px;
+      display: none;
+    }
+    .promo-active-preview.visible { display: block; }
+    .promo-active-preview .label {
+      font-family: var(--font-data);
+      font-size: 0.6rem;
+      color: var(--phosphor);
+      letter-spacing: 0.15em;
+      margin-bottom: 6px;
+    }
+    .promo-active-preview .text {
+      font-family: var(--font-body);
+      font-weight: 600;
+      font-size: 0.95rem;
+      color: var(--text-main);
+    }
+    textarea.input {
+      resize: vertical;
+      min-height: 90px;
+      line-height: 1.5;
+    }
+
+    /* ── STATS PANEL ─────────────────────────────────────────── */
+    .stats-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 12px;
+      margin-top: 8px;
+    }
+    .stat-box {
+      background: var(--ink-mid);
+      border: 1px solid var(--pcb-dark);
+      border-radius: 8px;
+      padding: 16px 12px;
+      text-align: center;
+    }
+    .stat-value {
+      font-family: var(--font-display);
+      font-size: 2rem;
+      font-weight: 900;
+      color: var(--phosphor);
+      text-shadow: 0 0 16px rgba(0,255,65,0.4);
+      line-height: 1;
+    }
+    .stat-label {
+      font-family: var(--font-data);
+      font-size: 0.58rem;
+      color: var(--text-dim);
+      letter-spacing: 0.1em;
+      margin-top: 6px;
+    }
+    .stat-box.full-width {
+      grid-column: 1 / -1;
+    }
+
+    /* ── SETTINGS ROW ────────────────────────────────────────── */
+    .settings-section { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--pcb-trace); }
+    .settings-row { display: flex; gap: 10px; align-items: flex-end; }
+    .settings-row .field { flex: 1; display: flex; flex-direction: column; gap: 6px; }
   </style>
 </head>
 <body>
@@ -1073,12 +1146,104 @@ function handleRedeemReward(id) {
 }
 
 // stubs for next task
-function renderPromoPanel() {}
-function renderStatsPanel() {}
+function renderPromoPanel() {
+  const panel = document.getElementById('tab-senal');
+  const promo = DB.getPromotion();
+
+  panel.innerHTML = `
+    <div class="promo-panel">
+      <div class="promo-panel-label">// SEÑAL ACTIVA ACTUAL</div>
+      <div class="promo-active-preview ${promo ? 'visible' : ''}" id="promo-preview">
+        <div class="label">BROADCAST ACTIVO</div>
+        <div class="text" id="promo-preview-text">${promo ? escapeHTML(promo.message) : ''}</div>
+      </div>
+
+      <div class="t-label" style="margin-top:8px">NUEVA SEÑAL</div>
+      <textarea class="input t-mono" id="promo-input" placeholder="// ESCRIBE EL MENSAJE DE LA SEÑAL..." maxlength="200">${promo ? escapeHTML(promo.message) : ''}</textarea>
+
+      <button class="btn btn-primary" id="btn-activate-promo">ACTIVAR SEÑAL</button>
+      <button class="btn btn-secondary" id="btn-clear-promo" ${!promo ? 'disabled' : ''}>LIMPIAR SEÑAL</button>
+
+      <div class="settings-section">
+        <div class="t-label" style="margin-bottom:12px">// CONFIGURACIÓN PIN</div>
+        <div class="settings-row">
+          <div class="field">
+            <label class="t-label" for="new-pin">NUEVO PIN (4 DÍGITOS)</label>
+            <input class="input" id="new-pin" type="password" maxlength="4" placeholder="••••" inputmode="numeric">
+          </div>
+          <button class="btn btn-secondary" id="btn-save-pin" style="width:auto;padding:12px 16px;white-space:nowrap">GUARDAR</button>
+        </div>
+        <div class="t-mono" style="font-size:0.6rem;color:var(--text-dim);margin-top:6px" id="pin-msg"></div>
+      </div>
+    </div>
+  `;
+
+  document.getElementById('btn-activate-promo').addEventListener('click', () => {
+    const msg = document.getElementById('promo-input').value.trim();
+    if (!msg) { toast('// ERROR: ESCRIBE UN MENSAJE'); return; }
+    DB.setPromotion(msg);
+    document.getElementById('promo-preview').classList.add('visible');
+    document.getElementById('promo-preview-text').textContent = msg;
+    document.getElementById('btn-clear-promo').disabled = false;
+    toast('SEÑAL ACTIVADA — VISIBLE EN TODAS LAS TARJETAS');
+  });
+
+  document.getElementById('btn-clear-promo').addEventListener('click', () => {
+    if (!confirm('¿LIMPIAR SEÑAL ACTIVA?')) return;
+    DB.setPromotion(null);
+    document.getElementById('promo-preview').classList.remove('visible');
+    document.getElementById('promo-input').value = '';
+    document.getElementById('btn-clear-promo').disabled = true;
+    toast('SEÑAL LIMPIADA');
+  });
+
+  document.getElementById('btn-save-pin').addEventListener('click', () => {
+    const pin = document.getElementById('new-pin').value;
+    const msg = document.getElementById('pin-msg');
+    if (!/^\d{4}$/.test(pin)) { msg.textContent = '// ERROR: DEBE SER 4 DÍGITOS'; return; }
+    const settings = DB.getSettings();
+    settings.pin = pin;
+    DB.saveSettings(settings);
+    document.getElementById('new-pin').value = '';
+    msg.textContent = '// PIN ACTUALIZADO';
+    setTimeout(() => { msg.textContent = ''; }, 2000);
+  });
+}
+function renderStatsPanel() {
+  const panel = document.getElementById('tab-stats');
+  const stats = DB.getStatsToday();
+  const customers = DB.getCustomers();
+  const totalStamps = customers.reduce((s, c) => s + c.total_visits, 0);
+
+  panel.innerHTML = `
+    <div class="t-label" style="margin-bottom:4px">// ESTADÍSTICAS GLOBALES</div>
+    <div class="stats-grid">
+      <div class="stat-box">
+        <div class="stat-value">${stats.totalClients}</div>
+        <div class="stat-label">CLIENTES<br>REGISTRADOS</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">${stats.stampsToday}</div>
+        <div class="stat-label">VISITAS<br>HOY</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">${stats.totalRewards}</div>
+        <div class="stat-label">RECOMPENSAS<br>CANJEADAS</div>
+      </div>
+      <div class="stat-box">
+        <div class="stat-value">${totalStamps}</div>
+        <div class="stat-label">SELLOS<br>TOTALES</div>
+      </div>
+      <div class="stat-box full-width" style="border-color:var(--phosphor)">
+        <div class="stat-value" style="font-size:1.4rem">PROTOCOLO_006</div>
+        <div class="stat-label" style="margin-top:4px">9 SELLOS = ROOT MATCHA GRATIS ($75)</div>
+      </div>
+    </div>
+  `;
+}
 
 // ── INIT ──────────────────────────────────────────────────
 document.addEventListener('DOMContentLoaded', () => {
-  runDBTests();
   router();
 });
 </script>
